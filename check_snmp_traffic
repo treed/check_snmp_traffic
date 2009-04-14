@@ -26,84 +26,85 @@ my $PROGNAME = "check_snmp_traffic";
 my $REVISION = "0.9.0";
 
 sub print_usage {
-		print "Usage:\n";
-		print "  $PROGNAME (-i | -o) [-w <rate>] [-c <rate>] [-h <hostname>] [-C <community>] [-I <interface>] [-t <time>] [-n <number>] [-X] [-B]\n";
-		print "  $PROGNAME [-h | --help]\n";
-		print "  $PROGNAME [-V | --version]\n";
+    print "Usage:\n";
+    print "  $PROGNAME (-i | -o) [-w <rate>] [-c <rate>] [-h <hostname>]\n";
+    print "       [-C <community>] [-I <interface>] [-t <time>] [-n <number>] [-X] [-B]\n";
+    print "  $PROGNAME [-h | --help]\n";
+    print "  $PROGNAME [-V | --version]\n";
 } 
 
 sub print_help {
-	print_revision($PROGNAME, $REVISION);
-	print "Copyright (c) 2009 Ted Reed\n\n";
-	print_usage();
-	print "\n";
-	print "  <rate> 	Traffic rate must be no more than this fast in bps.\n";
-	print "                    (Bps if -B is used.) The default is zero.\n";
-	print "  <hostname>	Host to query. Default is localhost.\n";
-	print "  <community>	SNMP Community. Default is public.\n";
-	print "  <interface>	Given as a numeric index. The default is 1.\n";
-	print "                     You may need to investigate to find out what index your\n";
-	print "                     device gives the interface you want to query.\n";
-	print "  <time>         Duration of the checks, specified in seconds. Default is 30.\n";
-	print "  <number>       Number of checks to do. Result is averaged. Default is 3.\n";
-	print "                     This cannot be less than 2, for obvious reasons.\n";
-	print "\n";
-	print "                Use -i or -o to indicate whether the script should query inbound\n";
-	print "                     or outbound traffic. If neither is given, -i is assumed.\n";
-	print "                -B is used to change the units to Bps.\n";
-	print "                -X can be used to specify that 64-bit counters should be\n";
-	print "                     queried, rather than the 32-bit counters. Consult\n";
-	print "                     with your vendor to see if they provide Counter64 support.\n\n";
+    print_revision($PROGNAME, $REVISION);
+    print "Copyright (c) 2009 Ted Reed\n\n";
+    print_usage();
+    print "\n";
+    print "  <rate>        Traffic rate must be no more than this fast in bps.\n";
+    print "                    (Bps if -B is used.) The default is zero.\n";
+    print "  <hostname>    Host to query. Default is localhost.\n";
+    print "  <community>   SNMP Community. Default is public.\n";
+    print "  <interface>   Given as a numeric index. The default is 1.\n";
+    print "                    You may need to investigate to find out what index your\n";
+    print "                    device gives the interface you want to query.\n";
+    print "  <time>        Duration of the checks, specified in seconds. Default is 30.\n";
+    print "  <number>      Number of checks to do. Result is averaged. Default is 3.\n";
+    print "                    This cannot be less than 2, for obvious reasons.\n";
+    print "\n";
+    print "                Use -i or -o to indicate whether the script should query inbound\n";
+    print "                    or outbound traffic. If neither is given, -i is assumed.\n";
+    print "                -B is used to change the units to Bps.\n";
+    print "                -X can be used to specify that 64-bit counters should be\n";
+    print "                    queried, rather than the 32-bit counters. Consult\n";
+    print "                    with your vendor to see if they provide Counter64 support.\n\n";
 }
 
 
-my $opt_warning =  0;			# If rate is above this level, return WARNING.
-my $opt_critical =  0;			# If rate is above this level, return CRITICAL.
-my $opt_version = 0;     		# If set, return version information and exit.
-my $opt_help = 0;	   			# If set, return help information and exit.
+my $opt_warning =  0;           # If rate is above this level, return WARNING.
+my $opt_critical =  0;          # If rate is above this level, return CRITICAL.
+my $opt_version = 0;            # If set, return version information and exit.
+my $opt_help = 0;               # If set, return help information and exit.
 my $opt_hostname = "localhost"; # Hostname to query.
-my $opt_community = "public";	# SNMP Community
-my $opt_interface = "1";		# Interface Index
-								# TODO: Include a switch that'll just fetch
-								#   a list of interfaces and their indices.
-my $opt_inbound = 0;			# If set, check inbound traffic.
-my $opt_outbound = 0;			# If set, check outbound traffic.
-my $opt_64bit = 0;				# If set, use the expanded 64-bit registers.
-my $opt_bytes = 0;				# If set, use Bps rather than bps as the unit.
-my $opt_time = 30;				# The amount of time to carry out the checks.
-my $opt_checks = 3;				# The amount of checks to make.
+my $opt_community = "public";   # SNMP Community
+my $opt_interface = "1";        # Interface Index
+                                # TODO: Include a switch that'll just fetch
+                                #   a list of interfaces and their indices.
+my $opt_inbound = 0;            # If set, check inbound traffic.
+my $opt_outbound = 0;           # If set, check outbound traffic.
+my $opt_64bit = 0;              # If set, use the expanded 64-bit registers.
+my $opt_bytes = 0;              # If set, use Bps rather than bps as the unit.
+my $opt_time = 30;              # The amount of time to carry out the checks.
+my $opt_checks = 3;             # The amount of checks to make.
 
 Getopt::Long::Configure('bundling');
 GetOptions(
-	"V"		=> \$opt_version,	"version"			=> \$opt_version,
-	"h"		=> \$opt_help,		"help"				=> \$opt_help,
-	"w=i"	=> \$opt_warning,	"warning=i"			=> \$opt_warning,
-	"c=i"	=> \$opt_critical,	"critical=i"		=> \$opt_critical,
-	"H=s"	=> \$opt_hostname,	"hostname=s"		=> \$opt_hostname,
-	"C=s"	=> \$opt_community,	"community=s"		=> \$opt_community,
-	"I=s"	=> \$opt_interface, "interface=s"		=> \$opt_interface,
-	"i"		=> \$opt_inbound,	"inbound"			=> \$opt_inbound,
-	"o"		=> \$opt_outbound,	"outbound"			=> \$opt_outbound,
-	"X"		=> \$opt_64bit,		"64bit"				=> \$opt_64bit,
-	"B"		=> \$opt_bytes,		"bytes"				=> \$opt_bytes,
-	"t=i"	=> \$opt_time,		"time"				=> \$opt_time,
-	"n=i"	=> \$opt_checks,	"number"			=> \$opt_checks);
+    "V"     => \$opt_version,    "version"      => \$opt_version,
+    "h"     => \$opt_help,       "help"         => \$opt_help,
+    "w=i"   => \$opt_warning,    "warning=i"    => \$opt_warning,
+    "c=i"   => \$opt_critical,   "critical=i"   => \$opt_critical,
+    "H=s"   => \$opt_hostname,   "hostname=s"   => \$opt_hostname,
+    "C=s"   => \$opt_community,  "community=s"  => \$opt_community,
+    "I=s"   => \$opt_interface,  "interface=s"  => \$opt_interface,
+    "i"     => \$opt_inbound,    "inbound"      => \$opt_inbound,
+    "o"     => \$opt_outbound,   "outbound"     => \$opt_outbound,
+    "X"     => \$opt_64bit,      "64bit"        => \$opt_64bit,
+    "B"     => \$opt_bytes,      "bytes"        => \$opt_bytes,
+    "t=i"   => \$opt_time,       "time"         => \$opt_time,
+    "n=i"   => \$opt_checks,     "number"       => \$opt_checks);
 
 if ($opt_version) {
-	print_revision($PROGNAME, $REVISION);
-	exit $ERRORS{'OK'};
+    print_revision($PROGNAME, $REVISION);
+    exit $ERRORS{'OK'};
 }
 
 if ($opt_help) {
-	print_help();
-	exit $ERRORS{'OK'};
+    print_help();
+    exit $ERRORS{'OK'};
 }
 
 # We can't get a rate without at least two checks.
 
 if ($opt_checks < 2) {
-	print "TRAFFIC_RATE UNKNOWN: Number of checks requested is less than two.\n";
-	exit $ERRORS{'UNKNOWN'};
+    print "TRAFFIC_RATE UNKNOWN: Number of checks requested is less than two.\n";
+    exit $ERRORS{'UNKNOWN'};
 }
 
 my $session = Net::SNMP->session(-hostname => $opt_hostname, -community => $opt_community);
@@ -111,8 +112,8 @@ my $session = Net::SNMP->session(-hostname => $opt_hostname, -community => $opt_
 # Not being able to talk to the host is BAD.
 
 unless (defined($session)) {
-	print "TRAFFIC_RATE CRITICAL: Unable to connect to $opt_hostname.\n";
-	exit $ERRORS{'CRITICAL'};
+    print "TRAFFIC_RATE CRITICAL: Unable to connect to $opt_hostname.\n";
+    exit $ERRORS{'CRITICAL'};
 }
 
 my $dir; # Short for direction.
@@ -121,25 +122,25 @@ my $oid;
 # I kinda wish the 64-bit register OIDs were more similar to the 32-bit ones.
 
 unless ($opt_64bit) {
-	$dir = "10"; # Yes, this makes inbound the default.
-	$dir = "16" if $opt_outbound;
-	$oid = "1.3.6.1.2.1.2.2.1.$dir.$opt_interface";
+    $dir = "10"; # Yes, this makes inbound the default.
+    $dir = "16" if $opt_outbound;
+    $oid = "1.3.6.1.2.1.2.2.1.$dir.$opt_interface";
 } else {
-	$dir = "6";
-	$dir = "10" if $opt_outbound;
-	$oid = "1.3.6.1.2.1.31.1.1.1.$dir.$opt_interface";
+    $dir = "6";
+    $dir = "10" if $opt_outbound;
+    $oid = "1.3.6.1.2.1.31.1.1.1.$dir.$opt_interface";
 }
 
 # TODO: Consider just trying a 64-bit OID first and reverting to 32-bit.
 
 sub getTraffic {
-	my $result = $session->get_request(-varbindlist => [$oid]);
-	unless (defined($result)) { 
-		print "TRAFFIC_RATE CRITICAL: Error reading oid $oid ", $session->error();
-		$session->close();
-		exit $ERRORS{'CRITICAL'};
-	}
-	return $result;
+    my $result = $session->get_request(-varbindlist => [$oid]);
+    unless (defined($result)) { 
+        print "TRAFFIC_RATE CRITICAL: Error reading oid $oid ", $session->error();
+        $session->close();
+        exit $ERRORS{'CRITICAL'};
+    }
+    return $result;
 }
 
 # Nothing particularly SNMP-like about this.
@@ -148,7 +149,7 @@ sub getTraffic {
 sub applySlidingWindow($\@$) {
     my $size = shift;
     my $array = shift;
-	my $length = @$array;
+    my $length = @$array;
     my $block = shift;
     for my $i (1 .. ($length - $size + 1)) {
         $block->(@$array[$i, $i - $size +  1]);
@@ -156,17 +157,17 @@ sub applySlidingWindow($\@$) {
 }
 
 sub sum {
-	my $ret;
-	$ret += $_ for @_;
-	return $ret;
+    my $ret;
+    $ret += $_ for @_;
+    return $ret;
 }
 
 my @results;
 
 # Evenly space out the checks throughout specified duration.
 for (1 .. ($opt_checks - 1)) {
-	push(@results, [getTraffic()->{$oid}, time()]);
-	sleep($opt_time / ($opt_checks - 1));
+    push(@results, [getTraffic()->{$oid}, time()]);
+    sleep($opt_time / ($opt_checks - 1));
 }
 
 push(@results, [getTraffic()->{$oid}, time()]);
@@ -175,16 +176,16 @@ my @rates;
 
 # Probably the nastiest bit of code here. I make no apologies.
 applySlidingWindow(2, @results, sub {
-	my $cur = $_[0][0];
-	my $prev = $_[1][0]; 
-	my $time = $_[0][1] - $_[1][1];
-	# This is in case the register overflows while being observed.
-	# Yes, I realize how unlikely this is in the case of 64-bit.
-	# But it's a simple addition, and you never know.
-	$cur += 2**($opt_64bit ? 64 : 32) if $prev > $cur;
-	my $rate = ($cur - $prev) / $time;
-	$rate *= 8 unless $opt_bytes;
-	push(@rates, $rate);
+    my $cur = $_[0][0];
+    my $prev = $_[1][0]; 
+    my $time = $_[0][1] - $_[1][1];
+    # This is in case the register overflows while being observed.
+    # Yes, I realize how unlikely this is in the case of 64-bit.
+    # But it's a simple addition, and you never know.
+    $cur += 2**($opt_64bit ? 64 : 32) if $prev > $cur;
+    my $rate = ($cur - $prev) / $time;
+    $rate *= 8 unless $opt_bytes;
+    push(@rates, $rate);
 });
 
 my $rates = @rates;
@@ -192,13 +193,13 @@ my $rate = sum(@rates)/$rates;
 
 my $condition = "OK";
 if ($rate >= $opt_critical) {
-	$condition = "CRITICAL";
+    $condition = "CRITICAL";
 } elsif ($rate >= $opt_warning) {
-	$condition = "WARNING";
+    $condition = "WARNING";
 }
 
 printf("TRAFFIC_RATE $condition: %d%s %s\n", $rate, ($opt_bytes ? "Bps" : "bps"), ($opt_outbound ? "outbound" : "inbound"));
-	
+    
 $session->close;
 
 exit $ERRORS{$condition};
