@@ -19,7 +19,6 @@
 use strict;
 use Net::SNMP;
 use Getopt::Long;
-use Data::Dumper;
 use lib "/usr/lib/nagios/plugins";
 use utils qw (%ERRORS &print_revision);
 
@@ -187,8 +186,6 @@ applySlidingWindow(2, @results, sub {
 	$rate *= 8 unless $opt_bytes;
 	push(@rates, $rate);
 });
-
-print Dumper(@rates);
 
 my $rates = @rates;
 my $rate = sum(@rates)/$rates;
