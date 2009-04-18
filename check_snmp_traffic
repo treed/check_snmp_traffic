@@ -28,7 +28,7 @@ my $REVISION = "0.9.0";
 sub print_usage {
     print "Usage:\n";
     print "  $PROGNAME (-i | -o) [-w <rate>] [-c <rate>] [-h <hostname>]\n";
-    print "       [-C <community>] [-I <interface>] [-t <time>] [-n <number>] [-X] [-B]\n";
+    print "       [-C <community>] [-I <interface>] [-t <time>] [-n <number>] [-B]\n";
     print "  $PROGNAME [-h | --help]\n";
     print "  $PROGNAME [-V | --version]\n";
 } 
@@ -52,9 +52,6 @@ sub print_help {
     print "                Use -i or -o to indicate whether the script should query inbound\n";
     print "                    or outbound traffic. If neither is given, -i is assumed.\n";
     print "                -B is used to change the units to Bps.\n";
-    print "                -X can be used to specify that 64-bit counters should be\n";
-    print "                    queried, rather than the 32-bit counters. Consult\n";
-    print "                    with your vendor to see if they provide Counter64 support.\n\n";
 }
 
 
@@ -69,7 +66,7 @@ my $opt_interface = "1";        # Interface Index
                                 #   a list of interfaces and their indices.
 my $opt_inbound = 0;            # If set, check inbound traffic.
 my $opt_outbound = 0;           # If set, check outbound traffic.
-my $opt_64bit = 0;              # If set, use the expanded 64-bit registers.
+my $opt_64bit = 1;              # If set, use the expanded 64-bit registers.
 my $opt_bytes = 0;              # If set, use Bps rather than bps as the unit.
 my $opt_time = 30;              # The amount of time to carry out the checks.
 my $opt_checks = 3;             # The amount of checks to make.
@@ -85,7 +82,6 @@ GetOptions(
     "I=s"   => \$opt_interface,  "interface=s"  => \$opt_interface,
     "i"     => \$opt_inbound,    "inbound"      => \$opt_inbound,
     "o"     => \$opt_outbound,   "outbound"     => \$opt_outbound,
-    "X"     => \$opt_64bit,      "64bit"        => \$opt_64bit,
     "B"     => \$opt_bytes,      "bytes"        => \$opt_bytes,
     "t=i"   => \$opt_time,       "time"         => \$opt_time,
     "n=i"   => \$opt_checks,     "number"       => \$opt_checks);
@@ -118,6 +114,12 @@ unless (defined($session)) {
 
 my $dir; # Short for direction.
 my $oid;
+
+# Try to see if the enhanced OIDs are available
+
+my $resXTable = $session->get_request(-varbindlist => ["1.3.6.1.2.1.31.1.1.1.$opt_interface"]);
+
+$opt_64bit = 0 unless defined($resXTable);
 
 # I kinda wish the 64-bit register OIDs were more similar to the 32-bit ones.
 
