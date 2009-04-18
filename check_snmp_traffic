@@ -133,8 +133,6 @@ unless ($opt_64bit) {
     $oid = "1.3.6.1.2.1.31.1.1.1.$dir.$opt_interface";
 }
 
-# TODO: Consider just trying a 64-bit OID first and reverting to 32-bit.
-
 sub getTraffic {
     my $result = $session->get_request(-varbindlist => [$oid]);
     unless (defined($result)) { 
