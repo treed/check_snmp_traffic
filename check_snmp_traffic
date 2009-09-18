@@ -27,7 +27,7 @@ my $REVISION = "0.9.0";
 
 sub print_usage {
     print "Usage:\n";
-    print "  $PROGNAME (-i | -o) [-w <rate>] [-c <rate>] [-h <hostname>]\n";
+    print "  $PROGNAME (-i | -o) [-w <rate>] [-c <rate>] [-H <hostname>]\n";
     print "       [-C <community>] [-I <interface>] [-t <time>] [-n <number>] [-B]\n";
     print "  $PROGNAME [-h | --help]\n";
     print "  $PROGNAME [-V | --version]\n";
